@@ -32,3 +32,4 @@ build/
 ### VS Code ###
 .vscode/
 cle.pem
+src/main/resources/abcd.pem
