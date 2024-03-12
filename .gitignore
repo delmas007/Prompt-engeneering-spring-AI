@@ -33,3 +33,7 @@ build/
 .vscode/
 cle.pem
 src/main/resources/abcd.pem
+
+src/main/resources/Key/.env
+
+src/main/resources/Key/
