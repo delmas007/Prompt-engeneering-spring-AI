@@ -5,6 +5,8 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.ai.chat.ChatClient;
 import org.springframework.ai.chat.ChatResponse;
+import org.springframework.ai.chat.messages.SystemMessage;
+import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.chat.prompt.SystemPromptTemplate;
 import org.springframework.ai.openai.OpenAiChatClient;
@@ -15,6 +17,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -65,5 +68,33 @@ public class OpenAiRestController {
 
         String content = response.getResult().getOutput().getContent();
         return new ObjectMapper().readValue(content, Map.class);
+    }
+
+    @GetMapping("/sentiment-analysis")
+    public String sentimentAnalysis(String review) {
+        {
+            OpenAiApi aiApi = new OpenAiApi(apiKey);
+            OpenAiChatOptions openAiChatOptions = OpenAiChatOptions.builder()
+                    .withModel("gpt-4-turbo-preview")
+                    .withTemperature(0F)
+                    .withMaxTokens(300)
+                    .build();
+            OpenAiChatClient openAiChatClient = new OpenAiChatClient(aiApi, openAiChatOptions);
+
+            String systemMessageText = """
+                    Dans chaque revue, il peut y avoir un ou plusieurs des aspects suivants : écran, clavier et souris.,
+                    Pour chaque revue présentée en entrée :",
+                    - Identifier s'il y a l'un des 3 aspects (écran, clavier, souris) présents dans la revue.",
+                    - Attribuer une polarité de sentiment (positive, négative ou neutre) pour chaque aspect.",
+                    - Organiser votre réponse en un objet JSON avec les en-têtes suivants :",
+                    	- catégorie : [liste des aspects]",
+                    	- polarité : [liste des polarités correspondantes pour chaque aspect]
+                    	""";
+            SystemMessage systemMessage = new SystemMessage(systemMessageText);
+            UserMessage userMessage = new UserMessage("```" + review + "```");
+            Prompt zeroShotPrompt = new Prompt(List.of(systemMessage, userMessage)); // Zero-shot prompt
+            ChatResponse response = openAiChatClient.call(zeroShotPrompt);
+            return response.getResult().getOutput().getContent();
+        }
     }
 }
