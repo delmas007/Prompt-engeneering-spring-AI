@@ -95,7 +95,12 @@ public class OpenAiRestController {
             SystemMessage systemMessage = new SystemMessage(systemMessageText);
             UserMessage userMessage = new UserMessage("```" + revue + "```");
             Prompt zeroShotPrompt = new Prompt(List.of(systemMessage, userMessage)); // Zero-shot prompt
-            ChatResponse response = openAiChatClient.call(zeroShotPrompt);
+
+            UserMessage userMessage1 = new UserMessage("```l'écran est très bon, mais le clavier est mauvais, et la souris est moyenne.```");
+            SystemMessage systemMessage1 = new SystemMessage("{\"catégorie\": [\"écran\", \"clavier\", \"souris\"],\n\"polarité\": [\"positive\", \"négative\", \"neutre\"]}");
+            Prompt fewShotPrompt = new Prompt(List.of(systemMessage, userMessage1,systemMessage1, userMessage)); // Few-shot prompt
+
+            ChatResponse response = openAiChatClient.call(fewShotPrompt);
             String content = response.getResult().getOutput().getContent();
             return new ObjectMapper().readValue(content, Map.class);
 
