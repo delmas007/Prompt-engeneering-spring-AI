@@ -70,9 +70,9 @@ public class OpenAiRestController {
         return new ObjectMapper().readValue(content, Map.class);
     }
 
+//http://localhost:8899/sentiment-analysis?revue=J'ai acheté un ordinateur portable et je suis très satisfait de l'écran et du clavier.
     @GetMapping("/sentiment-analysis")
-    public String sentimentAnalysis(String review) {
-        {
+    public Map sentimentAnalysis(String revue) throws JsonProcessingException {
             OpenAiApi aiApi = new OpenAiApi(apiKey);
             OpenAiChatOptions openAiChatOptions = OpenAiChatOptions.builder()
                     .withModel("gpt-4-turbo-preview")
@@ -82,6 +82,7 @@ public class OpenAiRestController {
             OpenAiChatClient openAiChatClient = new OpenAiChatClient(aiApi, openAiChatOptions);
 
             String systemMessageText = """
+                    Effectuez une analyse des sentiments basée sur les aspects des avis sur les ordinateurs portables présentés dans l'entrée délimitée par trois backticks, c'est-à-dire: ```
                     Dans chaque revue, il peut y avoir un ou plusieurs des aspects suivants : écran, clavier et souris.,
                     Pour chaque revue présentée en entrée :",
                     - Identifier s'il y a l'un des 3 aspects (écran, clavier, souris) présents dans la revue.",
@@ -89,12 +90,14 @@ public class OpenAiRestController {
                     - Organiser votre réponse en un objet JSON avec les en-têtes suivants :",
                     	- catégorie : [liste des aspects]",
                     	- polarité : [liste des polarités correspondantes pour chaque aspect]
+                    n'ajoute pas ```json   ```
                     	""";
             SystemMessage systemMessage = new SystemMessage(systemMessageText);
-            UserMessage userMessage = new UserMessage("```" + review + "```");
+            UserMessage userMessage = new UserMessage("```" + revue + "```");
             Prompt zeroShotPrompt = new Prompt(List.of(systemMessage, userMessage)); // Zero-shot prompt
             ChatResponse response = openAiChatClient.call(zeroShotPrompt);
-            return response.getResult().getOutput().getContent();
-        }
+            String content = response.getResult().getOutput().getContent();
+            return new ObjectMapper().readValue(content, Map.class);
+
     }
 }
